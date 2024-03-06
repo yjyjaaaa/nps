@@ -21,26 +21,18 @@ type BaseController struct {
 }
 
 //初始化参数
-func (s *BaseController) Prepare() {
-	s.Data["web_base_url"] = beego.AppConfig.String("web_base_url")
-	controllerName, actionName := s.GetControllerAndAction()
-	s.controllerName = strings.ToLower(controllerName[0 : len(controllerName)-10])
-	s.actionName = strings.ToLower(actionName)
-	// web api verify
-	// param 1 is md5(authKey+Current timestamp)
-	// param 2 is timestamp (It's limited to 20 seconds.)
-	md5Key := s.getEscapeString("auth_key")
-	timestamp := s.GetIntNoErr("timestamp")
-	configKey := beego.AppConfig.String("auth_key")
-	timeNowUnix := time.Now().Unix()
-	if !(md5Key != "" && (math.Abs(float64(timeNowUnix-int64(timestamp))) <= 20) && (crypt.Md5(configKey+strconv.Itoa(timestamp)) == md5Key)) {
-		if s.GetSession("auth") != true {
-			s.Redirect(beego.AppConfig.String("web_base_url")+"/login/index", 302)
-		}
-	} else {
-		s.SetSession("isAdmin", true)
-		s.Data["isAdmin"] = true
+md5Key := s.getEscapeString("auth_key")
+timestamp := s.GetIntNoErr("timestamp")
+configKey := beego.AppConfig.String("auth_key")
+timeNowUnix := time.Now().Unix()
+if !(md5Key != "" && (math.Abs(float64(timeNowUnix-int64(timestamp))) <= 20) && (crypt.Md5(configKey+strconv.Itoa(timestamp)) == md5Key)) {
+	if s.GetSession("auth") != true {
+		s.Redirect(beego.AppConfig.String("web_base_url")+"/login/index", 302)
 	}
+} else {
+	s.SetSession("isAdmin", true)
+	s.Data["isAdmin"] = true
+}
 	if s.GetSession("isAdmin") != nil && !s.GetSession("isAdmin").(bool) {
 		s.Ctx.Input.SetData("client_id", s.GetSession("clientId").(int))
 		s.Ctx.Input.SetParam("client_id", strconv.Itoa(s.GetSession("clientId").(int)))
